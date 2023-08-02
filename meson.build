@@ -179,5 +179,5 @@ foreach algo: algos
         cpp_args: ['-DTEST_ALGO=' + algo]
     )
 
-    test('test-' + algo, test_exec, workdir: meson.current_source_dir() + '/inputs')
+    test('test-' + algo, test_exec, workdir: meson.current_source_dir() + '/input')
 endforeach
