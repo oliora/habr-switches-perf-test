@@ -1,0 +1,1 @@
+option('architecture', type : 'combo', choices: ['native', 'icelake'])
