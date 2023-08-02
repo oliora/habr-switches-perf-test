@@ -9,6 +9,7 @@
 - x86_64 Linux machine with CPU that supports AVX2 (all modern Intel and AMD CPUs have it)
 - GCC or Clang (any version that supports C++17 should be fine)
 - Meson
+- To create graphs: Python 3 with `pandas`, `mathplot` and `jupyterlab` packages
 
 # How to build
 
