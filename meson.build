@@ -8,6 +8,7 @@ project(
         'warning_level=2',
         'werror=true',
         'buildtype=release',
+	'debug=true',
         'b_lto=true',
         'b_ndebug=true',
     ]
@@ -15,9 +16,18 @@ project(
 
 add_global_arguments(['-ffast-math'], language: ['c', 'cpp'])
 
-min_arch_flags = ['-mavx', '-mavx2', '-mno-avx256-split-unaligned-load']
+native_arch_flags = [
+    '-march=native',
+    '-mtune=native',
+    '-mavx',
+    '-mavx2',
+    '-mno-avx256-split-unaligned-load',
+    '-msse',
+    '-msse2',
+    '-msse3',
+]
 
-skylake_arch_flags = [
+icelake_arch_flags = [
     '-march=icelake-server',
     '-mmmx',
     '-mno-3dnow',
@@ -105,66 +115,60 @@ skylake_arch_flags = [
     '-mtune=icelake-server',
  ]
 
-add_global_arguments(min_arch_flags, language: ['c', 'cpp'])
-#add_global_arguments(skylake_arch_flags, language: ['c', 'cpp'])
+#add_global_arguments(native_arch_flags, language: ['c', 'cpp'])
+add_global_arguments(icelake_arch_flags, language: ['c', 'cpp'])
 
 algos = [
-    'algoHabrNaive',
-    'algoHabrLessBranches',
-    'algoHabrTableChar',
-    'algoHabrTableInt',
-    'algoHabrVectorized32',
-    'algoHabrVectorized64',
-    'algoHabrVectorized128WithBug',
-    'algoHabrVectorized128',
-    'algoHabrVectorized128IntStepResult',
-    'algoHabrVectorized256',
-    'algoHabrVectorized256IntStepResult',
-    'algoHabrVectorized512',
-    'algoHabrVectorized1024',
-    'algoHabrVectorized2048',
+    'naive',
+    'naiveLessBranches',
+    'naiveTableChar',
+    'naiveTableInt',
+    'autoVec_32',
+    'autoVec_64',
+    'autoVec_128_WithOverflow',
+    'autoVec_128',
+    'autoVec_128_IntStepCounter',
+    'autoVec_256',
+    'autoVec_256_IntStepCounter',
+    'autoVec_512',
+    'autoVec_1024',
+    'autoVec_2048',
 
-    'algoVectorized32',
-    'algoVectorized64',
-    'algoVectorized128',
-    'algoVectorized256',
-    'algoVectorized512',
-    'algoVectorized1024',
-    'algoVectorized2048',
+    'manualVec_32',
+    'manualVec_64',
+    'manualVec_128',
+    'manualVec_256',
+    'manualVec_512',
+    'manualVec_1024',
+    'manualVec_2048',
 
-    'algoVectorizedWithSize32',
-    'algoVectorizedWithSize64',
-    'algoVectorizedWithSize128',
-    'algoVectorizedWithSize256',
-    'algoVectorizedWithSize512',
-    'algoVectorizedWithSize1024',
-    'algoVectorizedWithSize2048',
+    'manualVecSize_32',
+    'manualVecSize_64',
+    'manualVecSize_128',
+    'manualVecSize_256',
+    'manualVecSize_512',
+    'manualVecSize_1024',
+    'manualVecSize_2048',
 
-    'algoVectorizedWithSizeUnaligned32',
-    'algoVectorizedWithSizeUnaligned64',
-    'algoVectorizedWithSizeUnaligned128',
-    'algoVectorizedWithSizeUnaligned256',
-    'algoVectorizedWithSizeUnaligned512',
-    'algoVectorizedWithSizeUnaligned1024',
-    'algoVectorizedWithSizeUnaligned2048',
-
-    'algoVectorizedWithStrlen32',
-    'algoVectorizedWithStrlen64',
-    'algoVectorizedWithStrlen128',
-    'algoVectorizedWithStrlen256',
-    'algoVectorizedWithStrlen512',
-    'algoVectorizedWithStrlen1024',
-    'algoVectorizedWithStrlen2048',
+    'manualVecStrlen_32',
+    'manualVecStrlen_64',
+    'manualVecStrlen_128',
+    'manualVecStrlen_256',
+    'manualVecStrlen_512',
+    'manualVecStrlen_1024',
+    'manualVecStrlen_2048',
 ]
 
 foreach algo: algos
-    executable(algo, [
+    name = algo.replace('_', '-')
+
+    executable('algo-' + name, [
             'main.cpp',
         ],
         cpp_args: ['-DTEST_ALGO=' + algo]
     )
 
-    test_exec = executable('test-' + algo, [
+    test_exec = executable('test-' + name, [
             'test_main.cpp',
         ],
         cpp_args: ['-DTEST_ALGO=' + algo]
@@ -172,4 +176,3 @@ foreach algo: algos
 
     test('test-' + algo, test_exec, workdir: meson.current_source_dir() + '/inputs')
 endforeach
-

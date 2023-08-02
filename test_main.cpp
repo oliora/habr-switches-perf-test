@@ -15,25 +15,25 @@ TEST_CASE("BaseTest") {
         const auto input = loadFile(filename);
         REQUIRE(strlen(input.c_str()) == input.size());
 
-        const auto res = TEST_ALGO(input.c_str(), input.size());
+        const auto res = algos::TEST_ALGO(input.c_str(), input.size());
         REQUIRE(res == expected_result);
     }
 
     SECTION("AllAsses") {
         std::string input(4096, 's');
-        const auto res = TEST_ALGO(input.c_str(), input.size());
+        const auto res = algos::TEST_ALGO(input.c_str(), input.size());
         REQUIRE(res == 4096);
     }
 
     SECTION("AllPees") {
         std::string input(4096, 'p');
-        const auto res = TEST_ALGO(input.c_str(), input.size());
+        const auto res = algos::TEST_ALGO(input.c_str(), input.size());
         REQUIRE(res == -4096);
     }
 
     SECTION("NoneOfAssesOrPees") {
         std::string input(4096, 'a');
-        const auto res = TEST_ALGO(input.c_str(), input.size());
+        const auto res = algos::TEST_ALGO(input.c_str(), input.size());
         REQUIRE(res == 0);
     }
 };
@@ -47,7 +47,7 @@ TEST_CASE("CountWarAndPeace") {
     REQUIRE(input.size() == expected_size);
     REQUIRE(strlen(input.c_str()) == input.size());
 
-    const auto res = TEST_ALGO(input.c_str(), input.size());
+    const auto res = algos::TEST_ALGO(input.c_str(), input.size());
     REQUIRE(res == expected_result);
 
     std::cerr << "input_file=" << filename
@@ -56,7 +56,7 @@ TEST_CASE("CountWarAndPeace") {
         << std::endl;
 
     BENCHMARK("Count") {
-        return TEST_ALGO(input.c_str(), input.size());
+        return algos::TEST_ALGO(input.c_str(), input.size());
     };
 
     BENCHMARK("StdStrLen") {

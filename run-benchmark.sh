@@ -11,7 +11,7 @@ if [ ! -f "${input_dir}/${long_input_file}" ]; then
     done
 fi
 
-algos=( $(for i in build/algo*; do [ -f "$i" ] && echo "$i"; done) )
+algos=( $(for i in build/algo-*; do [ -f "$i" ] && echo "$i"; done) )
 inputs=( ${small_input_file} ${long_input_file} )
 
 for a in "${algos[@]}"; do

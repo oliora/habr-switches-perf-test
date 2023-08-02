@@ -12,12 +12,12 @@
 
 # How to build
 
-To build release version (fully optimized without debug symbols):
+To build release version (fully optimized):
 
     meson setup build
     meson compile -C build
 
-To build debug version (non-optimized with debug symbols):
+To build debug version (non-optimized):
 
     meson setup build-debug --buildtype=debug
     meson compile -C build-debug
@@ -42,7 +42,7 @@ For more definitive results run tests on an isolated CPU core with using `taskse
 
 To run particular algo on a particular input file run:
 
-    [taskset -c <core>] build/algoXXX inputs/wp.txt
+    [taskset -c <core>] build/algo-XXX inputs/wp.txt
 
 # How to run unit tests and micro benchmarks
 

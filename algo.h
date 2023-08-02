@@ -8,7 +8,9 @@
 #include <limits>
 #include <immintrin.h>
 
-inline int algoHabrNaive(const char *input, size_t) noexcept {
+namespace algos {
+
+__attribute__((__noinline__)) int naive(const char *input, size_t) noexcept {
     int res = 0;
     while (true) {
         auto c = *input++;
@@ -33,7 +35,7 @@ constexpr __attribute__((always_inline)) int charValue(char c) noexcept {
     return (c == 's') - (c == 'p');
 }
 
-inline int algoHabrLessBranches(const char *input, size_t) noexcept {
+__attribute__((__noinline__)) int naiveLessBranches(const char *input, size_t) noexcept {
     int res = 0;
     while (true) {
         auto c = *input++;
@@ -69,7 +71,7 @@ struct CharValueTable {
 };
 
 template <std::integral T>
-inline int algoHabrTable(const char *input, size_t) noexcept {
+inline int naiveTable(const char *input, size_t) noexcept {
     int res = 0;
     while (true) {
         auto c = *input++;
@@ -80,12 +82,12 @@ inline int algoHabrTable(const char *input, size_t) noexcept {
     }
 }
 
-inline int algoHabrTableChar(const char *input, size_t s) noexcept {
-    return algoHabrTable<signed char>(input, s);
+__attribute__((__noinline__)) int naiveTableChar(const char *input, size_t s) noexcept {
+    return naiveTable<signed char>(input, s);
 }
 
-inline int algoHabrTableInt(const char *input, size_t s) noexcept {
-    return algoHabrTable<int>(input, s);
+__attribute__((__noinline__)) int naiveTableInt(const char *input, size_t s) noexcept {
+    return naiveTable<int>(input, s);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -105,7 +107,7 @@ requires((StepSize <= PageSize)
     //&& (StepSize <= std::numeric_limits<StepResultT>::max())
     //&& (-StepSize >= std::numeric_limits<StepResultT>::min())
     )
-inline int algoHabrVectorized(const char *input, size_t) noexcept {
+inline int autoVec(const char *input, size_t) noexcept {
     constexpr size_t BlocksPerStep = StepSize / sizeof(long long);
 
     int res = 0;
@@ -150,44 +152,44 @@ inline int algoHabrVectorized(const char *input, size_t) noexcept {
     }
 }
 
-inline int algoHabrVectorized32(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<32>(i, s);
+__attribute__((__noinline__)) int autoVec_32(const char *i, size_t s) noexcept {
+    return autoVec<32>(i, s);
 }
 
-inline int algoHabrVectorized64(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<64>(i, s);
+__attribute__((__noinline__)) int autoVec_64(const char *i, size_t s) noexcept {
+    return autoVec<64>(i, s);
 }
 
-inline int algoHabrVectorized128(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<128>(i, s);
+__attribute__((__noinline__)) int autoVec_128(const char *i, size_t s) noexcept {
+    return autoVec<128>(i, s);
 }
 
-inline int algoHabrVectorized128IntStepResult(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<128, int>(i, s);
+__attribute__((__noinline__)) int autoVec_128_IntStepCounter(const char *i, size_t s) noexcept {
+    return autoVec<128, int>(i, s);
 }
 
-inline int algoHabrVectorized128WithBug(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<128, signed char>(i, s);
+__attribute__((__noinline__)) int autoVec_128_WithOverflow(const char *i, size_t s) noexcept {
+    return autoVec<128, signed char>(i, s);
 }
 
-inline int algoHabrVectorized256(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<256>(i, s);
+__attribute__((__noinline__)) int autoVec_256(const char *i, size_t s) noexcept {
+    return autoVec<256>(i, s);
 }
 
-inline int algoHabrVectorized256IntStepResult(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<256, int>(i, s);
+__attribute__((__noinline__)) int autoVec_256_IntStepCounter(const char *i, size_t s) noexcept {
+    return autoVec<256, int>(i, s);
 }
 
-inline int algoHabrVectorized512(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<512>(i, s);
+__attribute__((__noinline__)) int autoVec_512(const char *i, size_t s) noexcept {
+    return autoVec<512>(i, s);
 }
 
-inline int algoHabrVectorized1024(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<1024>(i, s);
+__attribute__((__noinline__)) int autoVec_1024(const char *i, size_t s) noexcept {
+    return autoVec<1024>(i, s);
 }
 
-inline int algoHabrVectorized2048(const char *i, size_t s) noexcept {
-    return algoHabrVectorized<2048>(i, s);
+__attribute__((__noinline__)) int autoVec_2048(const char *i, size_t s) noexcept {
+    return autoVec<2048>(i, s);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -196,7 +198,7 @@ template <size_t StepSize>
 requires((StepSize <= PageSize)
     && (PageSize % StepSize == 0)
     && (StepSize % sizeof(long long) == 0))
-inline int algoVectorized(const char *input, size_t) noexcept {
+inline int manualVec(const char *input, size_t) noexcept {
     constexpr size_t BlocksPerStep = StepSize / sizeof(__m256i);
 
     int res = 0;
@@ -268,32 +270,32 @@ inline int algoVectorized(const char *input, size_t) noexcept {
     }
 }
 
-inline int algoVectorized32(const char *input, size_t s) noexcept {
-    return algoVectorized<32>(input, s);
+__attribute__((__noinline__)) int manualVec_32(const char *input, size_t s) noexcept {
+    return manualVec<32>(input, s);
 }
 
-inline int algoVectorized64(const char *input, size_t s) noexcept {
-    return algoVectorized<64>(input, s);
+__attribute__((__noinline__)) int manualVec_64(const char *input, size_t s) noexcept {
+    return manualVec<64>(input, s);
 }
 
-inline int algoVectorized128(const char *input, size_t s) noexcept {
-    return algoVectorized<128>(input, s);
+__attribute__((__noinline__)) int manualVec_128(const char *input, size_t s) noexcept {
+    return manualVec<128>(input, s);
 }
 
-inline int algoVectorized256(const char *input, size_t s) noexcept {
-    return algoVectorized<256>(input, s);
+__attribute__((__noinline__)) int manualVec_256(const char *input, size_t s) noexcept {
+    return manualVec<256>(input, s);
 }
 
-inline int algoVectorized512(const char *input, size_t s) noexcept {
-    return algoVectorized<512>(input, s);
+__attribute__((__noinline__)) int manualVec_512(const char *input, size_t s) noexcept {
+    return manualVec<512>(input, s);
 }
 
-inline int algoVectorized1024(const char *input, size_t s) noexcept {
-    return algoVectorized<1024>(input, s);
+__attribute__((__noinline__)) int manualVec_1024(const char *input, size_t s) noexcept {
+    return manualVec<1024>(input, s);
 }
 
-inline int algoVectorized2048(const char *input, size_t s) noexcept {
-    return algoVectorized<2048>(input, s);
+__attribute__((__noinline__)) int manualVec_2048(const char *input, size_t s) noexcept {
+    return manualVec<2048>(input, s);
 }
 
 /////////////////////////////////////////////////////////////////
@@ -302,7 +304,7 @@ template <size_t StepSize, bool AlignedLoad = true>
 requires((StepSize <= PageSize)
     && (PageSize % StepSize == 0)
     && (StepSize % sizeof(long long) == 0))
-inline int algoVectorizedWithSize(const char *input, size_t size) noexcept {
+inline int manualVecSize(const char *input, size_t size) noexcept {
     constexpr size_t BlocksPerStep = StepSize / sizeof(__m256i);
 
     int res = 0;
@@ -394,90 +396,93 @@ inline int algoVectorizedWithSize(const char *input, size_t size) noexcept {
     return res;
 }
 
-inline int algoVectorizedWithSize32(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<32>(input, s);
+__attribute__((__noinline__)) int manualVecSize_32(const char *input, size_t s) noexcept {
+    return manualVecSize<32>(input, s);
 }
 
-inline int algoVectorizedWithSize64(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<64>(input, s);
+__attribute__((__noinline__)) int manualVecSize_64(const char *input, size_t s) noexcept {
+    return manualVecSize<64>(input, s);
 }
 
-inline int algoVectorizedWithSize128(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<128>(input, s);
+__attribute__((__noinline__)) int manualVecSize_128(const char *input, size_t s) noexcept {
+    return manualVecSize<128>(input, s);
 }
 
-inline int algoVectorizedWithSize256(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<256>(input, s);
+__attribute__((__noinline__)) int manualVecSize_256(const char *input, size_t s) noexcept {
+    return manualVecSize<256>(input, s);
 }
 
-inline int algoVectorizedWithSize512(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<512>(input, s);
+__attribute__((__noinline__)) int manualVecSize_512(const char *input, size_t s) noexcept {
+    return manualVecSize<512>(input, s);
 }
 
-inline int algoVectorizedWithSize1024(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<1024>(input, s);
+__attribute__((__noinline__)) int manualVecSize_1024(const char *input, size_t s) noexcept {
+    return manualVecSize<1024>(input, s);
 }
 
-inline int algoVectorizedWithSize2048(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<2048>(input, s);
+__attribute__((__noinline__)) int manualVecSize_2048(const char *input, size_t s) noexcept {
+    return manualVecSize<2048>(input, s);
 }
+
+// /////////////////////////////////////////////////////////////////
+//
+// __attribute__((__noinline__)) int manualVecSizeUnaligned_32(const char *input, size_t s) noexcept {
+//     return manualVecSize<32, false>(input, s);
+// }
+//
+// __attribute__((__noinline__)) int manualVecSizeUnaligned_64(const char *input, size_t s) noexcept {
+//     return manualVecSize<64, false>(input, s);
+// }
+//
+// __attribute__((__noinline__)) int manualVecSizeUnaligned_128(const char *input, size_t s) noexcept {
+//     return manualVecSize<128, false>(input, s);
+// }
+//
+// __attribute__((__noinline__)) int manualVecSizeUnaligned_256(const char *input, size_t s) noexcept {
+//     return manualVecSize<256, false>(input, s);
+// }
+//
+// __attribute__((__noinline__)) int manualVecSizeUnaligned_512(const char *input, size_t s) noexcept {
+//     return manualVecSize<512, false>(input, s);
+// }
+//
+// __attribute__((__noinline__)) int manualVecSizeUnaligned_1024(const char *input, size_t s) noexcept {
+//     return manualVecSize<1024, false>(input, s);
+// }
+//
+// __attribute__((__noinline__)) int manualVecSizeUnaligned_2048(const char *input, size_t s) noexcept {
+//     return manualVecSize<2048, false>(input, s);
+// }
+//
 
 /////////////////////////////////////////////////////////////////
 
-inline int algoVectorizedWithSizeUnaligned32(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<32, false>(input, s);
+__attribute__((__noinline__)) int manualVecStrlen_32(const char *input, size_t) noexcept {
+    return manualVecSize<32>(input, strlen(input));
 }
 
-inline int algoVectorizedWithSizeUnaligned64(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<64, false>(input, s);
+__attribute__((__noinline__)) int manualVecStrlen_64(const char *input, size_t) noexcept {
+    return manualVecSize<64>(input, strlen(input));
 }
 
-inline int algoVectorizedWithSizeUnaligned128(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<128, false>(input, s);
+__attribute__((__noinline__)) int manualVecStrlen_128(const char *input, size_t) noexcept {
+    return manualVecSize<128>(input, strlen(input));
 }
 
-inline int algoVectorizedWithSizeUnaligned256(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<256, false>(input, s);
+__attribute__((__noinline__)) int manualVecStrlen_256(const char *input, size_t) noexcept {
+    return manualVecSize<256>(input, strlen(input));
 }
 
-inline int algoVectorizedWithSizeUnaligned512(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<512, false>(input, s);
+__attribute__((__noinline__)) int manualVecStrlen_512(const char *input, size_t) noexcept {
+    return manualVecSize<512>(input, strlen(input));
 }
 
-inline int algoVectorizedWithSizeUnaligned1024(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<1024, false>(input, s);
+__attribute__((__noinline__)) int manualVecStrlen_1024(const char *input, size_t) noexcept {
+    return manualVecSize<1024>(input, strlen(input));
 }
 
-inline int algoVectorizedWithSizeUnaligned2048(const char *input, size_t s) noexcept {
-    return algoVectorizedWithSize<2048, false>(input, s);
+__attribute__((__noinline__)) int manualVecStrlen_2048(const char *input, size_t) noexcept {
+    return manualVecSize<2048>(input, strlen(input));
 }
 
-/////////////////////////////////////////////////////////////////
-
-inline int algoVectorizedWithStrlen32(const char *input, size_t) noexcept {
-    return algoVectorizedWithSize<32>(input, strlen(input));
-}
-
-inline int algoVectorizedWithStrlen64(const char *input, size_t) noexcept {
-    return algoVectorizedWithSize<64>(input, strlen(input));
-}
-
-inline int algoVectorizedWithStrlen128(const char *input, size_t) noexcept {
-    return algoVectorizedWithSize<128>(input, strlen(input));
-}
-
-inline int algoVectorizedWithStrlen256(const char *input, size_t) noexcept {
-    return algoVectorizedWithSize<256>(input, strlen(input));
-}
-
-inline int algoVectorizedWithStrlen512(const char *input, size_t) noexcept {
-    return algoVectorizedWithSize<512>(input, strlen(input));
-}
-
-inline int algoVectorizedWithStrlen1024(const char *input, size_t) noexcept {
-    return algoVectorizedWithSize<1024>(input, strlen(input));
-}
-
-inline int algoVectorizedWithStrlen2048(const char *input, size_t) noexcept {
-    return algoVectorizedWithSize<2048>(input, strlen(input));
 }

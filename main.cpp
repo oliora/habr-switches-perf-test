@@ -38,7 +38,7 @@ int main(int argc, const char **argv) {
 
     clobberMemory();
     const auto start = PerfClock::now();
-    const auto res = TEST_ALGO(content.c_str(), content.size());
+    const auto res = algos::TEST_ALGO(content.c_str(), content.size());
     const auto duration = std::chrono::nanoseconds(PerfClock::now() - start);
     const auto speed = content.size() * NsPerS / duration.count() / Mebibyte;
     clobberMemory();
