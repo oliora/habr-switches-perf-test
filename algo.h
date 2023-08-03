@@ -218,8 +218,10 @@ inline int manualVec(const char *input, size_t) noexcept {
     const __m256i p_c = _mm256_set1_epi8('p');  // Fill all packed 8-bit integers with 'p'
     const __m256i s_c = _mm256_set1_epi8('s');  // Fill all packed 8-bit integers with 's'
 
-    const __m256i posOffset = _mm256_set1_epi8(BlocksPerStep); // Offset to add to counters to make them non-negative
+    // Offset to add to counters to make them non-negative
+    const __m256i posOffset = _mm256_set1_epi8(BlocksPerStep);
     constexpr int negOffset = BlocksPerStep * sizeof(__m256i);
+
     __m256i resVec{};
 
     while (true) {
@@ -300,7 +302,7 @@ __attribute__((__noinline__)) int manualVec_2048(const char *input, size_t s) no
 
 /////////////////////////////////////////////////////////////////
 
-template <size_t StepSize, bool AlignedLoad = true>
+template <size_t StepSize>
 requires((StepSize <= PageSize)
     && (PageSize % StepSize == 0)
     && (StepSize % sizeof(long long) == 0))
@@ -337,12 +339,7 @@ inline int manualVecSize(const char *input, size_t size) noexcept {
         while (input != alignedInputEnd) {
             __m256i counters;
             forEach<BlocksPerStep>([&]<size_t Idx>(IndexConstant<Idx>) {
-                __m256i block;
-                if constexpr (AlignedLoad) {
-                    block = _mm256_load_si256(reinterpret_cast<const __m256i*>(input) + Idx);
-                } else {
-                    block = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(input) + Idx);
-                }
+                const __m256i block = _mm256_load_si256(reinterpret_cast<const __m256i*>(input) + Idx);
 
                 if constexpr (Idx == 0) {
                     counters = _mm256_sub_epi8(_mm256_cmpeq_epi8(p_c, block), _mm256_cmpeq_epi8(s_c, block));
@@ -352,38 +349,24 @@ inline int manualVecSize(const char *input, size_t size) noexcept {
                 }
             });
 
-            if constexpr (StepSize < 128) {
-                // Total step counter fits into signed char, effectively works for StepSize <= 64
-                // Fold 8 byte words of `counters` by adding their packed 8-bit ints
-                __m128i step_res = _mm_add_epi8(_mm256_extracti128_si256(counters, 1), *reinterpret_cast<const __m128i*>(&counters));
-                step_res = _mm_add_epi8(_mm_bsrli_si128(step_res, 8), step_res);
-                // Compute the absolute differences of packed unsigned 8-bit integers in step_res and null_c
-                // This works for us thx to unsigned arithmetic
-                step_res = _mm_sad_epu8(step_res, *reinterpret_cast<const __m128i*>(&null_c));
-                // Get the lowest byte of step_res as signed char
-                res += static_cast<signed char>(_mm_extract_epi8(step_res, 0));
-            } else {
-                // Each 8-bit counter of `counters` fits into signed char, effectively works for BlocksPerStep <= 64 (hence StepSize <= 2048)
-                static_assert(BlocksPerStep < 128);
-                // Make 8-bit counters to be non-negative
-                counters = _mm256_add_epi8(counters, posOffset);
-                // Sum up 32 8-bit counters to produce 4 16-bit counters
-                counters = _mm256_sad_epu8(counters, null_c);
-                resVec = _mm256_add_epi64(resVec, counters);
+            // Each 8-bit counter of `counters` fits into signed char, effectively works for BlocksPerStep <= 64 (hence StepSize <= 2048)
+            static_assert(BlocksPerStep < 128);
+            // Make 8-bit counters to be non-negative
+            counters = _mm256_add_epi8(counters, posOffset);
+            // Sum up 32 8-bit counters to produce 4 16-bit counters
+            counters = _mm256_sad_epu8(counters, null_c);
+            resVec = _mm256_add_epi64(resVec, counters);
 
-                // Compensate for added `posOffset`
-                res -= negOffset;
-            }
+            // Compensate for added `posOffset`
+            res -= negOffset;
 
             input += StepSize;
         }
 
-        if constexpr (StepSize >= 128) {
-            // Sum up vector counters
-            __m128i step_res = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
-            step_res = _mm_add_epi64(_mm_bsrli_si128(step_res, 8), step_res);
-            res += static_cast<int>(_mm_extract_epi64(step_res, 0));
-        }
+        // Sum up vector counters
+        __m128i step_res = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
+        step_res = _mm_add_epi64(_mm_bsrli_si128(step_res, 8), step_res);
+        res += static_cast<int>(_mm_extract_epi64(step_res, 0));
     }
 
     // TODO: To minimize slow naive part finish up with 32 byte steps before going naive
@@ -423,37 +406,6 @@ __attribute__((__noinline__)) int manualVecSize_1024(const char *input, size_t s
 __attribute__((__noinline__)) int manualVecSize_2048(const char *input, size_t s) noexcept {
     return manualVecSize<2048>(input, s);
 }
-
-// /////////////////////////////////////////////////////////////////
-//
-// __attribute__((__noinline__)) int manualVecSizeUnaligned_32(const char *input, size_t s) noexcept {
-//     return manualVecSize<32, false>(input, s);
-// }
-//
-// __attribute__((__noinline__)) int manualVecSizeUnaligned_64(const char *input, size_t s) noexcept {
-//     return manualVecSize<64, false>(input, s);
-// }
-//
-// __attribute__((__noinline__)) int manualVecSizeUnaligned_128(const char *input, size_t s) noexcept {
-//     return manualVecSize<128, false>(input, s);
-// }
-//
-// __attribute__((__noinline__)) int manualVecSizeUnaligned_256(const char *input, size_t s) noexcept {
-//     return manualVecSize<256, false>(input, s);
-// }
-//
-// __attribute__((__noinline__)) int manualVecSizeUnaligned_512(const char *input, size_t s) noexcept {
-//     return manualVecSize<512, false>(input, s);
-// }
-//
-// __attribute__((__noinline__)) int manualVecSizeUnaligned_1024(const char *input, size_t s) noexcept {
-//     return manualVecSize<1024, false>(input, s);
-// }
-//
-// __attribute__((__noinline__)) int manualVecSizeUnaligned_2048(const char *input, size_t s) noexcept {
-//     return manualVecSize<2048, false>(input, s);
-// }
-//
 
 /////////////////////////////////////////////////////////////////
 
