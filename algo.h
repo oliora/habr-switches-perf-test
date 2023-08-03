@@ -214,13 +214,13 @@ inline int manualVec(const char *input, size_t) noexcept {
         }
     }
 
-    const __m256i null_c = _mm256_set1_epi8(0); // Fill all packed 8-bit integers with 0
-    const __m256i p_c = _mm256_set1_epi8('p');  // Fill all packed 8-bit integers with 'p'
-    const __m256i s_c = _mm256_set1_epi8('s');  // Fill all packed 8-bit integers with 's'
+    const __m256i zeroes = _mm256_set1_epi8(0); // Fill all packed 8-bit integers with 0
+    const __m256i ps = _mm256_set1_epi8('p');  // Fill all packed 8-bit integers with 'p'
+    const __m256i ss = _mm256_set1_epi8('s');  // Fill all packed 8-bit integers with 's'
 
     // Offset to add to counters to make them non-negative
-    const __m256i posOffset = _mm256_set1_epi8(BlocksPerStep);
-    constexpr int negOffset = BlocksPerStep * sizeof(__m256i);
+    const __m256i vecOffset = _mm256_set1_epi8(BlocksPerStep);
+    constexpr int scalarOffset = BlocksPerStep * sizeof(__m256i);
 
     __m256i resVec{};
 
@@ -231,16 +231,16 @@ inline int manualVec(const char *input, size_t) noexcept {
             const __m256i block = _mm256_load_si256(reinterpret_cast<const __m256i*>(input) + Idx);
 
             if constexpr (Idx == 0) {
-                eq_null = _mm256_cmpeq_epi8(null_c, block);
-                counters = _mm256_sub_epi8(_mm256_cmpeq_epi8(p_c, block), _mm256_cmpeq_epi8(s_c, block));
+                eq_null = _mm256_cmpeq_epi8(zeroes, block);
+                counters = _mm256_sub_epi8(_mm256_cmpeq_epi8(ps, block), _mm256_cmpeq_epi8(ss, block));
             } else {
-                eq_null = _mm256_or_si256(eq_null, _mm256_cmpeq_epi8(null_c, block));
-                counters = _mm256_add_epi8(counters, _mm256_cmpeq_epi8(p_c, block));
-                counters = _mm256_sub_epi8(counters, _mm256_cmpeq_epi8(s_c, block));
+                eq_null = _mm256_or_si256(eq_null, _mm256_cmpeq_epi8(zeroes, block));
+                counters = _mm256_add_epi8(counters, _mm256_cmpeq_epi8(ps, block));
+                counters = _mm256_sub_epi8(counters, _mm256_cmpeq_epi8(ss, block));
             }
         });
 
-        // Fold 8 byte words of `counters` by OR-ing their packed 8-bit ints
+        // Fold `counters` to a 64-bit integer with birwise or
         __m128i step_null = _mm_or_si128(_mm256_extracti128_si256(eq_null, 1), *reinterpret_cast<const __m128i*>(&eq_null));
         step_null = _mm_or_si128(_mm_bsrli_si128(step_null, 8), step_null);
         const auto anyNull = _mm_extract_epi64(step_null, 0);
@@ -250,23 +250,24 @@ inline int manualVec(const char *input, size_t) noexcept {
                 res += charValue(*input++);
             }
 
-            // Sum up vector counters
-            __m128i step_res = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
-            step_res = _mm_add_epi64(_mm_bsrli_si128(step_res, 8), step_res);
-            res += static_cast<int>(_mm_extract_epi64(step_res, 0));
+            // Fold 4 64-bit counters in resVec to a 64-bit integer with addition
+            __m128i stepRes = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
+            stepRes = _mm_add_epi64(_mm_bsrli_si128(stepRes, 8), stepRes);
+            res += static_cast<int>(_mm_extract_epi64(stepRes, 0));
             return res;
         }
 
-        // Each 8-bit counter of `counters` fits into signed char, effectively works for BlocksPerStep <= 64 (hence StepSize <= 2048)
+        // Each 8-bit counter in `counters` fits into signed char, effectively works for BlocksPerStep < 128 hence max StepSize is 2048
         static_assert(BlocksPerStep < 128);
-        // Make 8-bit counters to be non-negative
-        counters = _mm256_add_epi8(counters, posOffset);
-        // Sum up 32 8-bit counters to produce 4 16-bit counters
-        counters = _mm256_sad_epu8(counters, null_c);
+        // Offset 8-bit counters to be non-negative
+        counters = _mm256_add_epi8(counters, vecOffset);
+        // Horisontally sum 8-bit counters in groups by 8 to produce 4 16-bit counters
+        counters = _mm256_sad_epu8(counters, zeroes);
+        // Sum them with 4 64-bit counters in resVec
         resVec = _mm256_add_epi64(resVec, counters);
 
-        // Compensate for added offset
-        res -= negOffset;
+        // Compensate for added vecOffset
+        res -= scalarOffset;
 
         input += StepSize;
     }
@@ -326,13 +327,13 @@ inline int manualVecSize(const char *input, size_t size) noexcept {
     {
         const auto alignedInputEnd = alignedBefore<StepSize>(inputEnd);
 
-        const __m256i null_c = _mm256_set1_epi8(0); // Fill all packed 8-bit integers with 0
-        const __m256i p_c = _mm256_set1_epi8('p');  // Fill all packed 8-bit integers with 'p'
-        const __m256i s_c = _mm256_set1_epi8('s');  // Fill all packed 8-bit integers with 's'
+        const __m256i zeroes = _mm256_set1_epi8(0); // Fill all packed 8-bit integers with 0
+        const __m256i ps = _mm256_set1_epi8('p');  // Fill all packed 8-bit integers with 'p'
+        const __m256i ss = _mm256_set1_epi8('s');  // Fill all packed 8-bit integers with 's'
 
         // Offset to add to step counters to make them non-negative
-        const __m256i posOffset = _mm256_set1_epi8(BlocksPerStep);
-        constexpr int negOffset = BlocksPerStep * sizeof(__m256i);
+        const __m256i vecOffset = _mm256_set1_epi8(BlocksPerStep);
+        constexpr int scalarOffset = BlocksPerStep * sizeof(__m256i);
 
         __m256i resVec{};
 
@@ -342,31 +343,32 @@ inline int manualVecSize(const char *input, size_t size) noexcept {
                 const __m256i block = _mm256_load_si256(reinterpret_cast<const __m256i*>(input) + Idx);
 
                 if constexpr (Idx == 0) {
-                    counters = _mm256_sub_epi8(_mm256_cmpeq_epi8(p_c, block), _mm256_cmpeq_epi8(s_c, block));
+                    counters = _mm256_sub_epi8(_mm256_cmpeq_epi8(ps, block), _mm256_cmpeq_epi8(ss, block));
                 } else {
-                    counters = _mm256_add_epi8(counters, _mm256_cmpeq_epi8(p_c, block));
-                    counters = _mm256_sub_epi8(counters, _mm256_cmpeq_epi8(s_c, block));
+                    counters = _mm256_add_epi8(counters, _mm256_cmpeq_epi8(ps, block));
+                    counters = _mm256_sub_epi8(counters, _mm256_cmpeq_epi8(ss, block));
                 }
             });
 
-            // Each 8-bit counter of `counters` fits into signed char, effectively works for BlocksPerStep <= 64 (hence StepSize <= 2048)
+            // Each 8-bit counter in `counters` fits into signed char, effectively works for BlocksPerStep < 128 hence max StepSize is 2048
             static_assert(BlocksPerStep < 128);
-            // Make 8-bit counters to be non-negative
-            counters = _mm256_add_epi8(counters, posOffset);
-            // Sum up 32 8-bit counters to produce 4 16-bit counters
-            counters = _mm256_sad_epu8(counters, null_c);
+            // Offset 8-bit counters to be non-negative
+            counters = _mm256_add_epi8(counters, vecOffset);
+            // Horisontally sum 8-bit counters in groups by 8 to produce 4 16-bit counters
+            counters = _mm256_sad_epu8(counters, zeroes);
+            // Sum them with 4 64-bit counters in resVec
             resVec = _mm256_add_epi64(resVec, counters);
 
-            // Compensate for added `posOffset`
-            res -= negOffset;
+            // Compensate for added `vecOffset`
+            res -= scalarOffset;
 
             input += StepSize;
         }
 
-        // Sum up vector counters
-        __m128i step_res = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
-        step_res = _mm_add_epi64(_mm_bsrli_si128(step_res, 8), step_res);
-        res += static_cast<int>(_mm_extract_epi64(step_res, 0));
+        // Fold 4 64-bit counters in resVec to a 64-bit integer with addition
+        __m128i stepRes = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
+        stepRes = _mm_add_epi64(_mm_bsrli_si128(stepRes, 8), stepRes);
+        res += static_cast<int>(_mm_extract_epi64(stepRes, 0));
     }
 
     // TODO: To minimize slow naive part finish up with 32 byte steps before going naive
