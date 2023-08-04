@@ -122,6 +122,8 @@ endif
 
 add_global_arguments(arch_flags, language: ['c', 'cpp'])
 
+algos_lib = static_library('algos', ['algos.cpp'])
+
 algos = [
     'naive',
     'naiveLessBranches',
@@ -163,19 +165,20 @@ algos = [
     'manualVecStrlen_2048',
 ]
 
-
 foreach algo: algos
     name = algo.replace('_', '-')
 
     executable('algo-' + name, [
             'main.cpp',
         ],
+        link_with: [algos_lib],
         cpp_args: ['-DTEST_ALGO=' + algo]
     )
 
     test_exec = executable('test-' + name, [
             'test_main.cpp',
         ],
+        link_with: [algos_lib],
         cpp_args: ['-DTEST_ALGO=' + algo]
     )
 

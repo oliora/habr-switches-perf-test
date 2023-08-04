@@ -1,5 +1,4 @@
-#pragma once
-
+#include "algos.h"
 #include "common.h"
 #include <cstdint>
 #include <cstring>
@@ -10,7 +9,7 @@
 
 namespace algos {
 
-__attribute__((__noinline__)) int naive(const char *input, size_t) noexcept {
+int naive(const char *input, size_t) noexcept {
     int res = 0;
     while (true) {
         auto c = *input++;
@@ -35,7 +34,7 @@ constexpr __attribute__((always_inline)) int charValue(char c) noexcept {
     return (c == 's') - (c == 'p');
 }
 
-__attribute__((__noinline__)) int naiveLessBranches(const char *input, size_t) noexcept {
+int naiveLessBranches(const char *input, size_t) noexcept {
     int res = 0;
     while (true) {
         auto c = *input++;
@@ -82,11 +81,11 @@ inline int naiveTable(const char *input, size_t) noexcept {
     }
 }
 
-__attribute__((__noinline__)) int naiveTableChar(const char *input, size_t s) noexcept {
+int naiveTableChar(const char *input, size_t s) noexcept {
     return naiveTable<signed char>(input, s);
 }
 
-__attribute__((__noinline__)) int naiveTableInt(const char *input, size_t s) noexcept {
+int naiveTableInt(const char *input, size_t s) noexcept {
     return naiveTable<int>(input, s);
 }
 
@@ -152,43 +151,43 @@ inline int autoVec(const char *input, size_t) noexcept {
     }
 }
 
-__attribute__((__noinline__)) int autoVec_32(const char *i, size_t s) noexcept {
+int autoVec_32(const char *i, size_t s) noexcept {
     return autoVec<32>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_64(const char *i, size_t s) noexcept {
+int autoVec_64(const char *i, size_t s) noexcept {
     return autoVec<64>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_128(const char *i, size_t s) noexcept {
+int autoVec_128(const char *i, size_t s) noexcept {
     return autoVec<128>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_128_IntStepCounter(const char *i, size_t s) noexcept {
+int autoVec_128_IntStepCounter(const char *i, size_t s) noexcept {
     return autoVec<128, int>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_128_WithOverflow(const char *i, size_t s) noexcept {
+int autoVec_128_WithOverflow(const char *i, size_t s) noexcept {
     return autoVec<128, signed char>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_256(const char *i, size_t s) noexcept {
+int autoVec_256(const char *i, size_t s) noexcept {
     return autoVec<256>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_256_IntStepCounter(const char *i, size_t s) noexcept {
+int autoVec_256_IntStepCounter(const char *i, size_t s) noexcept {
     return autoVec<256, int>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_512(const char *i, size_t s) noexcept {
+int autoVec_512(const char *i, size_t s) noexcept {
     return autoVec<512>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_1024(const char *i, size_t s) noexcept {
+int autoVec_1024(const char *i, size_t s) noexcept {
     return autoVec<1024>(i, s);
 }
 
-__attribute__((__noinline__)) int autoVec_2048(const char *i, size_t s) noexcept {
+int autoVec_2048(const char *i, size_t s) noexcept {
     return autoVec<2048>(i, s);
 }
 
@@ -273,31 +272,31 @@ inline int manualVec(const char *input, size_t) noexcept {
     }
 }
 
-__attribute__((__noinline__)) int manualVec_32(const char *input, size_t s) noexcept {
+int manualVec_32(const char *input, size_t s) noexcept {
     return manualVec<32>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVec_64(const char *input, size_t s) noexcept {
+int manualVec_64(const char *input, size_t s) noexcept {
     return manualVec<64>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVec_128(const char *input, size_t s) noexcept {
+int manualVec_128(const char *input, size_t s) noexcept {
     return manualVec<128>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVec_256(const char *input, size_t s) noexcept {
+int manualVec_256(const char *input, size_t s) noexcept {
     return manualVec<256>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVec_512(const char *input, size_t s) noexcept {
+int manualVec_512(const char *input, size_t s) noexcept {
     return manualVec<512>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVec_1024(const char *input, size_t s) noexcept {
+int manualVec_1024(const char *input, size_t s) noexcept {
     return manualVec<1024>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVec_2048(const char *input, size_t s) noexcept {
+int manualVec_2048(const char *input, size_t s) noexcept {
     return manualVec<2048>(input, s);
 }
 
@@ -381,61 +380,61 @@ inline int manualVecSize(const char *input, size_t size) noexcept {
     return res;
 }
 
-__attribute__((__noinline__)) int manualVecSize_32(const char *input, size_t s) noexcept {
+int manualVecSize_32(const char *input, size_t s) noexcept {
     return manualVecSize<32>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVecSize_64(const char *input, size_t s) noexcept {
+int manualVecSize_64(const char *input, size_t s) noexcept {
     return manualVecSize<64>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVecSize_128(const char *input, size_t s) noexcept {
+int manualVecSize_128(const char *input, size_t s) noexcept {
     return manualVecSize<128>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVecSize_256(const char *input, size_t s) noexcept {
+int manualVecSize_256(const char *input, size_t s) noexcept {
     return manualVecSize<256>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVecSize_512(const char *input, size_t s) noexcept {
+int manualVecSize_512(const char *input, size_t s) noexcept {
     return manualVecSize<512>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVecSize_1024(const char *input, size_t s) noexcept {
+int manualVecSize_1024(const char *input, size_t s) noexcept {
     return manualVecSize<1024>(input, s);
 }
 
-__attribute__((__noinline__)) int manualVecSize_2048(const char *input, size_t s) noexcept {
+int manualVecSize_2048(const char *input, size_t s) noexcept {
     return manualVecSize<2048>(input, s);
 }
 
 /////////////////////////////////////////////////////////////////
 
-__attribute__((__noinline__)) int manualVecStrlen_32(const char *input, size_t) noexcept {
+int manualVecStrlen_32(const char *input, size_t) noexcept {
     return manualVecSize<32>(input, strlen(input));
 }
 
-__attribute__((__noinline__)) int manualVecStrlen_64(const char *input, size_t) noexcept {
+int manualVecStrlen_64(const char *input, size_t) noexcept {
     return manualVecSize<64>(input, strlen(input));
 }
 
-__attribute__((__noinline__)) int manualVecStrlen_128(const char *input, size_t) noexcept {
+int manualVecStrlen_128(const char *input, size_t) noexcept {
     return manualVecSize<128>(input, strlen(input));
 }
 
-__attribute__((__noinline__)) int manualVecStrlen_256(const char *input, size_t) noexcept {
+int manualVecStrlen_256(const char *input, size_t) noexcept {
     return manualVecSize<256>(input, strlen(input));
 }
 
-__attribute__((__noinline__)) int manualVecStrlen_512(const char *input, size_t) noexcept {
+int manualVecStrlen_512(const char *input, size_t) noexcept {
     return manualVecSize<512>(input, strlen(input));
 }
 
-__attribute__((__noinline__)) int manualVecStrlen_1024(const char *input, size_t) noexcept {
+int manualVecStrlen_1024(const char *input, size_t) noexcept {
     return manualVecSize<1024>(input, strlen(input));
 }
 
-__attribute__((__noinline__)) int manualVecStrlen_2048(const char *input, size_t) noexcept {
+int manualVecStrlen_2048(const char *input, size_t) noexcept {
     return manualVecSize<2048>(input, strlen(input));
 }
 

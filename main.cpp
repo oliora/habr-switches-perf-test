@@ -1,5 +1,5 @@
 #include "util.h"
-#include "algo.h"
+#include "algos.h"
 
 #include <atomic>
 #include <chrono>

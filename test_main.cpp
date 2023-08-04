@@ -3,7 +3,7 @@
 #include "catch.hpp"
 
 #include "util.h"
-#include "algo.h"
+#include "algos.h"
 
 #include <iostream>
 
