@@ -8,7 +8,7 @@ project(
         'warning_level=2',
         'werror=true',
         'buildtype=release',
-	'debug=true',
+        'debug=true',
         'b_lto=true',
         'b_ndebug=true',
     ]
@@ -117,6 +117,7 @@ elif architecture == 'icelake'
         '--param',
         'l2-cache-size=55296',
         '-mtune=icelake-server',
+        #'-mprefer-vector-width=512',
     ]
 endif
 
@@ -129,6 +130,8 @@ algos = [
     'naiveLessBranches',
     'naiveTableChar',
     'naiveTableInt',
+
+    'autoVec_64_Orig',
     'autoVec_32',
     'autoVec_64',
     'autoVec_128_WithOverflow',
@@ -140,6 +143,7 @@ algos = [
     'autoVec_1024',
     'autoVec_2048',
 
+    'manualVec_64_Orig',
     'manualVec_32',
     'manualVec_64',
     'manualVec_128',

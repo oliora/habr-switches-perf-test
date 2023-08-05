@@ -7,7 +7,7 @@
 #include <type_traits>
 
 
-int main(int argc, const char **argv) {
+int main(int argc, const char* *argv) {
     if (argc < 2 || argc > 3) {
         std::cerr << "Usage: " << argv[0] << " <input_file> [<num_runs = 1>]\n";
         return 1;

@@ -10,7 +10,7 @@
 #define STR(s) XSTR(s)
 #define XSTR(s) #s
 
-inline std::string loadFile(const char *path) {
+inline std::string loadFile(const char* path) {
     std::string res;
 
     std::ifstream is{path};
