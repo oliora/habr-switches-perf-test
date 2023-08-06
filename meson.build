@@ -23,12 +23,7 @@ if architecture == 'native'
     arch_flags = [
         '-march=native',
         '-mtune=native',
-        '-mavx',
-        '-mavx2',
         '-mno-avx256-split-unaligned-load',
-        '-msse',
-        '-msse2',
-        '-msse3',
     ]
 elif architecture == 'icelake'
     arch_flags = [
