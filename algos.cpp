@@ -277,6 +277,7 @@ int manualVec_64_Orig(const char* input, std::size_t) noexcept {
             return res;
         }
 
+        // Take the lowest byte of the lowest 64-bit integer `stepRes` and convert it to a signed char
         res += static_cast<signed char>(stepRes[0]);
         input += 64;
     }
@@ -294,14 +295,11 @@ inline int manualVec(const char* input, std::size_t) noexcept {
     int res = 0;
 
     // Process unaligned preamble in naive way
-    {
-        const auto headEnd = alignedAfter<StepSize>(input);
-        while (input != headEnd && *input) {
-            res += charValue(*input++);
-        }
-        if (input != headEnd) [[unlikely]] {
-            return res;
-        }
+    for (const auto headEnd = alignedAfter<64>(input); input != headEnd && *input; ++input) {
+        res += charValue(*input);
+    }
+    if (!*input) [[unlikely]] {
+        return res;
     }
 
     const __m256i nulls = _mm256_set1_epi8(0); // Fill all packed 8-bit integers with 0
@@ -336,8 +334,6 @@ inline int manualVec(const char* input, std::size_t) noexcept {
         counters = _mm256_add_epi8(counters, vecOffset);
         // Horisontally sum 8-bit counters in groups by 8 to produce 4 16-bit counters
         counters = _mm256_sad_epu8(counters, nulls);
-        // Sum them with 4 64-bit counters in resVec
-        resVec = _mm256_add_epi64(resVec, counters);
 
         // Fold `eqNull` to a 64-bit integer with birwise or
         __m128i stepNull = _mm_or_si128(_mm256_extracti128_si256(eqNull, 1), *reinterpret_cast<const __m128i*>(&eqNull));
@@ -355,6 +351,9 @@ inline int manualVec(const char* input, std::size_t) noexcept {
             res += static_cast<int>(_mm_extract_epi64(stepRes, 0));
             return res;
         }
+
+        // Sum them with 4 64-bit counters in resVec
+        resVec = _mm256_add_epi64(resVec, counters);
 
         // Compensate for added vecOffset
         res -= scalarOffset;
