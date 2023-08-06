@@ -31,6 +31,7 @@ namespace detail {
     }
 }
 
+// Call `f` `N` times as `(f(IndexConstant<0>{}), f(IndexConstant<1>{}), ... f(IndexConstant<N-1>{}))`
 template <std::size_t N, class F>
 constexpr __attribute__((always_inline)) void forEach(F&& f) {
     detail::repeatBlock(std::make_index_sequence<N>{}, std::forward<F>(f));

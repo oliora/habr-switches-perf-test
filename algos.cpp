@@ -103,7 +103,7 @@ int naiveTableInt(const char* input, std::size_t s) noexcept {
     _r ? _ptr + (_align - _r) : _ptr; \
 })
 
-inline int autoVec_64_Orig_(const unsigned char* i) noexcept {
+inline __attribute__((always_inline)) int autoVec_64_Orig_(const unsigned char* i) noexcept {
     auto r = 0;
     for (auto head_end = aligned(i, step_size); i != head_end && *i; ++i) {
         r += proc(*i);
@@ -150,7 +150,7 @@ requires((StepSize <= PageSize)
     //&& (StepSize <= std::numeric_limits<StepResultT>::max())
     //&& (-StepSize >= std::numeric_limits<StepResultT>::min())
     )
-inline int autoVec(const char* input, std::size_t) noexcept {
+inline __attribute__((always_inline)) int autoVec(const char* input, std::size_t) noexcept {
     constexpr std::size_t BlocksPerStep = StepSize / sizeof(long long);
 
     int res = 0;
@@ -232,10 +232,12 @@ int autoVec_2048(const char* i, std::size_t s) noexcept {
 /////////////////////////////////////////////////////////////////
 
 int manualVec_64_Orig(const char* input, std::size_t) noexcept {
+    constexpr std::size_t StepSize = 64;
+
     int res = 0;
 
     // Process unaligned preamble in naive way
-    for (const auto headEnd = alignedAfter<64>(input); input != headEnd && *input; ++input) {
+    for (const auto headEnd = alignedAfter<StepSize>(input); input != headEnd && *input; ++input) {
         res += charValue(*input);
     }
     if (!*input) [[unlikely]] {
@@ -249,7 +251,7 @@ int manualVec_64_Orig(const char* input, std::size_t) noexcept {
     while (true) {
         // We use aligned load because we know that the input is aligned
         const __m256i block0 = _mm256_load_si256(reinterpret_cast<const __m256i*>(input));
-        const __m256i block1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(input + 32));
+        const __m256i block1 = _mm256_load_si256(reinterpret_cast<const __m256i*>(input + sizeof(__m256i)));
 
         __m256i eqNull = _mm256_cmpeq_epi8(nulls, block0);
         eqNull = _mm256_cmpeq_epi8(eqNull, block1);
@@ -279,7 +281,7 @@ int manualVec_64_Orig(const char* input, std::size_t) noexcept {
 
         // Take the lowest byte of the lowest 64-bit integer `stepRes` and convert it to a signed char
         res += static_cast<signed char>(stepRes[0]);
-        input += 64;
+        input += StepSize;
     }
 }
 
@@ -289,7 +291,7 @@ template <std::size_t StepSize>
 requires((StepSize <= PageSize)
     && (PageSize % StepSize == 0)
     && (StepSize % sizeof(long long) == 0))
-inline int manualVec(const char* input, std::size_t) noexcept {
+inline __attribute__((always_inline)) int manualVec(const char* input, std::size_t) noexcept {
     constexpr std::size_t BlocksPerStep = StepSize / sizeof(__m256i);
 
     int res = 0;
@@ -307,9 +309,10 @@ inline int manualVec(const char* input, std::size_t) noexcept {
     const __m256i ss = _mm256_set1_epi8('s');  // Fill all packed 8-bit integers with 's'
 
     // Offset to add to counters to make them non-negative
-    const __m256i vecOffset = _mm256_set1_epi8(BlocksPerStep);
+    const __m256i vecOffset = _mm256_set1_epi8(BlocksPerStep); // Fill all 32 8-bit integers with `BlocksPerStep`
     constexpr int scalarOffset = BlocksPerStep * sizeof(__m256i);
 
+    // Here we will accumulate vector step counters
     __m256i resVec{};
 
     while (true) {
@@ -328,11 +331,11 @@ inline int manualVec(const char* input, std::size_t) noexcept {
             }
         });
 
-        // Each 8-bit counter in `counters` fits into signed char, effectively works for BlocksPerStep < 128 hence max StepSize is 2048
+        // Each 8-bit counter in `counters` fits into signed char, effectively works for BlocksPerStep < 128 hence StepSize must be < 4096
         static_assert(BlocksPerStep < 128);
         // Offset 8-bit counters to be non-negative
         counters = _mm256_add_epi8(counters, vecOffset);
-        // Horisontally sum 8-bit counters in groups by 8 to produce 4 16-bit counters
+        // Horizontally sum each consequitive 8 absolute differences (abs(counters[i] - nulls[i])) and put results into four 16-bit integers
         counters = _mm256_sad_epu8(counters, nulls);
 
         // Fold `eqNull` to a 64-bit integer with birwise or
@@ -345,14 +348,14 @@ inline int manualVec(const char* input, std::size_t) noexcept {
                 res += charValue(*input++);
             }
 
-            // Fold 4 64-bit counters in resVec to a 64-bit integer with addition
+            // Devectorize `resVec`: fold 4 64-bit counters in resVec to a 64-bit integer with addition
             __m128i stepRes = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
             stepRes = _mm_add_epi64(_mm_bsrli_si128(stepRes, 8), stepRes);
             res += static_cast<int>(_mm_extract_epi64(stepRes, 0));
             return res;
         }
 
-        // Sum them with 4 64-bit counters in resVec
+        // Accumulate counters in resVec
         resVec = _mm256_add_epi64(resVec, counters);
 
         // Compensate for added vecOffset
@@ -396,7 +399,7 @@ template <std::size_t StepSize>
 requires((StepSize <= PageSize)
     && (PageSize % StepSize == 0)
     && (StepSize % sizeof(long long) == 0))
-inline int manualVecSize(const char* input, std::size_t size) noexcept {
+inline __attribute__((always_inline)) int manualVecSize(const char* input, std::size_t size) noexcept {
     constexpr std::size_t BlocksPerStep = StepSize / sizeof(__m256i);
 
     int res = 0;
@@ -421,9 +424,10 @@ inline int manualVecSize(const char* input, std::size_t size) noexcept {
         const __m256i ss = _mm256_set1_epi8('s');  // Fill all packed 8-bit integers with 's'
 
         // Offset to add to step counters to make them non-negative
-        const __m256i vecOffset = _mm256_set1_epi8(BlocksPerStep);
+        const __m256i vecOffset = _mm256_set1_epi8(BlocksPerStep); // Fill all 32 8-bit integers with `BlocksPerStep`
         constexpr int scalarOffset = BlocksPerStep * sizeof(__m256i);
 
+        // Here we will accumulate vector step counters
         __m256i resVec{};
 
         while (input != alignedInputEnd) {
@@ -439,13 +443,13 @@ inline int manualVecSize(const char* input, std::size_t size) noexcept {
                 }
             });
 
-            // Each 8-bit counter in `counters` fits into signed char, effectively works for BlocksPerStep < 128 hence max StepSize is 2048
+            // Each 8-bit counter in `counters` fits into signed char, effectively works for BlocksPerStep < 128 hence StepSize must be < 4096
             static_assert(BlocksPerStep < 128);
             // Offset 8-bit counters to be non-negative
             counters = _mm256_add_epi8(counters, vecOffset);
-            // Horisontally sum 8-bit counters in groups by 8 to produce 4 16-bit counters
+            // Horizontally sum each consequitive 8 absolute differences (abs(counters[i] - nulls[i])) and put results into four 16-bit integers
             counters = _mm256_sad_epu8(counters, nulls);
-            // Sum them with 4 64-bit counters in resVec
+            // Accumulate counters in resVec
             resVec = _mm256_add_epi64(resVec, counters);
 
             // Compensate for added `vecOffset`
@@ -454,7 +458,7 @@ inline int manualVecSize(const char* input, std::size_t size) noexcept {
             input += StepSize;
         }
 
-        // Fold 4 64-bit counters in resVec to a 64-bit integer with addition
+        // Devectorize `resVec`: fold 4 64-bit counters in resVec to a 64-bit integer with addition
         __m128i stepRes = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
         stepRes = _mm_add_epi64(_mm_bsrli_si128(stepRes, 8), stepRes);
         res += static_cast<int>(_mm_extract_epi64(stepRes, 0));
