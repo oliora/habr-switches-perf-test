@@ -264,10 +264,11 @@ int manualVec_64_Orig(const char* input, std::size_t) noexcept {
         // that is an intrinsic for `vpsadbw` instruction that I've mentioned in the above `autoVec_64` assembly comments
         counters = _mm256_sad_epu8(counters, nulls);
 
+        // Partially devectorize `counters`: sum four 64-bit integers of `counters` into the lowest 64-bit integer of `stepRes` (`stepRes[0]`)
         __m128i stepRes = _mm_add_epi64(_mm256_extracti128_si256(counters, 1), *reinterpret_cast<const __m128i*>(&counters));
         stepRes = _mm_add_epi64(_mm_bsrli_si128(stepRes, 8), stepRes);
 
-        // Fold `eqNull` to a 64-bit integer with birwise or
+        // Devectorize `eqNull`: bitwise or 4 64-bit parts of `eqNull` to a single 64-bit integer
         __m128i stepNull = _mm_or_si128(_mm256_extracti128_si256(eqNull, 1), *reinterpret_cast<const __m128i*>(&eqNull));
         stepNull = _mm_or_si128(_mm_bsrli_si128(stepNull, 8), stepNull);
         const auto anyNull = _mm_extract_epi64(stepNull, 0);
@@ -279,7 +280,7 @@ int manualVec_64_Orig(const char* input, std::size_t) noexcept {
             return res;
         }
 
-        // Take the lowest byte of the lowest 64-bit integer `stepRes` and convert it to a signed char
+        // Take the lowest byte of the 64-bit integer `stepRes[0]` and convert it to a signed char
         res += static_cast<signed char>(stepRes[0]);
         input += StepSize;
     }
@@ -338,7 +339,7 @@ inline __attribute__((always_inline)) int manualVec(const char* input, std::size
         // Horizontally sum each consequitive 8 absolute differences (abs(counters[i] - nulls[i])) and put results into four 16-bit integers
         counters = _mm256_sad_epu8(counters, nulls);
 
-        // Fold `eqNull` to a 64-bit integer with birwise or
+        // Devectorize `eqNull`: bitwise or 4 64-bit parts of `eqNull` to a single 64-bit integer
         __m128i stepNull = _mm_or_si128(_mm256_extracti128_si256(eqNull, 1), *reinterpret_cast<const __m128i*>(&eqNull));
         stepNull = _mm_or_si128(_mm_bsrli_si128(stepNull, 8), stepNull);
         const auto anyNull = _mm_extract_epi64(stepNull, 0);
@@ -348,7 +349,7 @@ inline __attribute__((always_inline)) int manualVec(const char* input, std::size
                 res += charValue(*input++);
             }
 
-            // Devectorize `resVec`: fold 4 64-bit counters in resVec to a 64-bit integer with addition
+            // Devectorize `resVec`: sum four 64-bit integers of `resVec` into one
             __m128i stepRes = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
             stepRes = _mm_add_epi64(_mm_bsrli_si128(stepRes, 8), stepRes);
             res += static_cast<int>(_mm_extract_epi64(stepRes, 0));
@@ -458,7 +459,7 @@ inline __attribute__((always_inline)) int manualVecSize(const char* input, std::
             input += StepSize;
         }
 
-        // Devectorize `resVec`: fold 4 64-bit counters in resVec to a 64-bit integer with addition
+        // Devectorize `resVec`: sum four 64-bit integers of `resVec` into one
         __m128i stepRes = _mm_add_epi64(_mm256_extracti128_si256(resVec, 1), *reinterpret_cast<const __m128i*>(&resVec));
         stepRes = _mm_add_epi64(_mm_bsrli_si128(stepRes, 8), stepRes);
         res += static_cast<int>(_mm_extract_epi64(stepRes, 0));
